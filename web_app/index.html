@@ -396,6 +396,136 @@
     </div>
   </div>
 
+  <!-- MODAL 4: User Authentication & Account Management -->
+  <div id="auth-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-white dark:bg-dark-panel rounded-2xl p-6 shadow-2xl border border-gray-200 dark:border-dark-border">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center space-x-2">
+          <img id="auth-current-avatar" src="./assets/user.png" class="w-8 h-8 rounded-full border border-brand-500" alt="Avatar">
+          <div>
+            <h3 class="font-bold text-sm leading-tight text-gray-900 dark:text-gray-100">User Account</h3>
+            <p id="auth-current-subtitle" class="text-[11px] text-gray-500 dark:text-gray-400">Signed in as John Doe</p>
+          </div>
+        </div>
+        <button id="close-auth-btn" class="text-gray-400 hover:text-gray-600 text-sm">✕</button>
+      </div>
+
+      <!-- Auth Navigation Tabs -->
+      <div class="flex border-b border-gray-200 dark:border-dark-border mb-4 text-xs font-semibold">
+        <button id="auth-tab-profile" class="py-2 px-3 border-b-2 border-brand-500 text-brand-600 dark:text-brand-400">My Profile</button>
+        <button id="auth-tab-switch" class="py-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">Switch Account</button>
+        <button id="auth-tab-create" class="py-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">Create New</button>
+      </div>
+
+      <!-- Tab 1: Current Profile -->
+      <div id="auth-view-profile" class="space-y-3">
+        <div>
+          <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Display Name</label>
+          <input type="text" id="profile-name-input" class="w-full bg-gray-50 dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded-xl px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Status / Bio</label>
+          <input type="text" id="profile-status-input" class="w-full bg-gray-50 dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded-xl px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+        </div>
+        <div class="pt-2 flex items-center justify-between">
+          <button id="logout-btn" class="text-xs font-semibold text-red-500 hover:text-red-700">Sign Out</button>
+          <button id="save-profile-btn" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold shadow">Save Changes</button>
+        </div>
+      </div>
+
+      <!-- Tab 2: Switch Account (Instant Cross-User Testing) -->
+      <div id="auth-view-switch" class="hidden space-y-2">
+        <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+          Switch active account instantly to test real-time chat between multiple users:
+        </p>
+        <div id="switch-accounts-list" class="space-y-1.5 max-h-48 overflow-y-auto">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Tab 3: Create New User Account -->
+      <div id="auth-view-create" class="hidden space-y-3">
+        <div>
+          <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Full Name</label>
+          <input type="text" id="create-user-name" placeholder="e.g. Alice Cooper" class="w-full bg-gray-50 dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded-xl px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Email or Username</label>
+          <input type="email" id="create-user-email" placeholder="alice@example.com" class="w-full bg-gray-50 dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded-xl px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Password</label>
+          <input type="password" id="create-user-pass" placeholder="••••••••" class="w-full bg-gray-50 dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded-xl px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+        </div>
+        <div class="pt-2 flex justify-end">
+          <button id="submit-create-account-btn" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold shadow">Create Account & Sign In</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 5: Add Contact & Start New Chat -->
+  <div id="new-chat-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-white dark:bg-dark-panel rounded-2xl p-6 shadow-2xl border border-gray-200 dark:border-dark-border">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center space-x-2">
+          <div class="p-2 bg-brand-50 dark:bg-brand-950/50 rounded-xl text-brand-600 dark:text-brand-400">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm leading-tight text-gray-900 dark:text-gray-100">Start New Chat</h3>
+            <p class="text-[11px] text-gray-500 dark:text-gray-400">Add a contact or start a direct conversation</p>
+          </div>
+        </div>
+        <button id="close-new-chat-btn" class="text-gray-400 hover:text-gray-600 text-sm">✕</button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Contact Name *</label>
+          <input type="text" id="new-contact-name" placeholder="e.g. Robert Smith" class="w-full bg-gray-50 dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded-xl px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Phone Number or Email</label>
+          <input type="text" id="new-contact-identifier" placeholder="+1 555-0199 or robert@mail.com" class="w-full bg-gray-50 dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded-xl px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">First Message (Optional)</label>
+          <input type="text" id="new-contact-message" placeholder="Hi! Let's connect on Mighty Chat" class="w-full bg-gray-50 dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded-xl px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+        </div>
+        <div class="pt-2 flex items-center justify-between">
+          <button id="create-group-btn" class="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline flex items-center space-x-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            <span>Create Group Chat instead</span>
+          </button>
+          <button id="start-chat-btn" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold shadow">Add & Start Chat</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 6: Chat Options Menu Dialog -->
+  <div id="chat-options-modal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-xs bg-white dark:bg-dark-panel rounded-2xl p-4 shadow-2xl border border-gray-200 dark:border-dark-border space-y-1 text-sm">
+      <h4 class="px-3 py-2 text-xs font-bold uppercase tracking-wider text-gray-400">Conversation Options</h4>
+      <button id="opt-clear-chat" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-hover flex items-center space-x-3 text-gray-700 dark:text-gray-200">
+        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        <span>Clear Chat History</span>
+      </button>
+      <button id="opt-mute-chat" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-hover flex items-center space-x-3 text-gray-700 dark:text-gray-200">
+        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/></svg>
+        <span>Mute Notifications</span>
+      </button>
+      <button id="opt-delete-chat" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 flex items-center space-x-3">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+        <span>Delete Conversation</span>
+      </button>
+      <div class="pt-2 border-t border-gray-100 dark:border-dark-border/40">
+        <button id="close-options-btn" class="w-full text-center py-2 text-xs font-semibold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Audio Ringtone -->
   <audio id="ringtone-audio" src="./assets/callingtone.mp3" preload="auto" loop></audio>
 
