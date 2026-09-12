@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Mighty Chat PWA</title>
+  
+  <!-- PWA Settings -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#0d9488">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MightyChat">
+  <link rel="icon" type="image/png" href="./icons/favicon.png">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+
+  <!-- Tailwind CSS & Fonts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              400: '#2dd4bf',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e',
+              800: '#115e59',
+              900: '#134e4a',
+            },
+            dark: {
+              bg: '#0c1317',
+              panel: '#111b21',
+              card: '#202c33',
+              hover: '#222e35',
+              border: '#2a3942',
+              outgoing: '#005c4b',
+              incoming: '#202c33'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(156, 163, 175, 0.4);
+      border-radius: 9999px;
+    }
+    .dark ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+    }
+    
+    /* Wallpaper Pattern */
+    .chat-bg-dark {
+      background-color: #0c1317;
+      background-image: radial-gradient(#202c33 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    .chat-bg-light {
+      background-color: #efeae2;
+      background-image: radial-gradient(#d1d7db 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    /* Safe Area insets */
+    .safe-top {
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+    .safe-bottom {
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    /* Prevent mobile rubber banding */
+    body {
+      overscroll-behavior-y: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 dark:bg-dark-bg text-gray-900 dark:text-gray-100 font-sans h-screen w-screen overflow-hidden flex flex-col antialiased select-none">
+
+  <!-- Offline / Online Connection Banner -->
+  <div id="offline-banner" class="hidden bg-amber-500 text-black text-xs font-semibold py-1 px-4 text-center transition-all duration-300">
+    ⚡ You are currently offline. Local cache is active.
+  </div>
+
+  <!-- PWA Install Prompt Banner -->
+  <div id="pwa-install-banner" class="hidden bg-brand-600 text-white px-4 py-2.5 flex items-center justify-between shadow-md z-50">
+    <div class="flex items-center space-x-3">
+      <img src="./icons/icon-192.png" class="w-8 h-8 rounded-lg shadow" alt="Icon">
+      <div>
+        <div class="text-sm font-semibold leading-tight">Install Mighty Chat</div>
+        <div class="text-xs text-brand-100">Install as PWA for fullscreen, fast access & notifications</div>
+      </div>
+    </div>
+    <div class="flex items-center space-x-2">
+      <button id="pwa-install-btn" class="bg-white text-brand-700 font-medium text-xs px-3 py-1.5 rounded-full shadow hover:bg-brand-50 transition">Install</button>
+      <button id="pwa-dismiss-btn" class="text-white hover:text-gray-200 text-xs px-2 py-1">✕</button>
+    </div>
+  </div>
+
+  <!-- Main App Shell -->
+  <div class="flex-1 flex overflow-hidden relative">
+    
+    <!-- LEFT PANE: Conversations & Stories -->
+    <aside id="sidebar" class="w-full md:w-[380px] lg:w-[420px] flex-shrink-0 flex flex-col bg-white dark:bg-dark-panel border-r border-gray-200 dark:border-dark-border z-20 transition-all duration-300">
+      
+      <!-- Top Navigation Header -->
+      <div class="p-3 bg-gray-50 dark:bg-dark-panel border-b border-gray-200 dark:border-dark-border flex items-center justify-between safe-top">
+        <div class="flex items-center space-x-3 cursor-pointer" id="my-profile-trigger">
+          <div class="relative">
+            <img id="my-avatar" src="./assets/user.png" class="w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-gray-700" alt="Me">
+            <span class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-dark-panel rounded-full"></span>
+          </div>
+          <div>
+            <h2 class="font-bold text-sm tracking-tight leading-none" id="my-name">John Doe</h2>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Mighty Chat PWA</p>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-1">
+          <!-- Install Button (always visible icon) -->
+          <button id="header-install-btn" title="Install Web App" class="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-hover rounded-full transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          </button>
+          
+          <!-- Theme Toggle -->
+          <button id="theme-toggle-btn" title="Toggle Theme" class="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-hover rounded-full transition">
+            <svg id="theme-icon-sun" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            <svg id="theme-icon-moon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+          </button>
+
+          <!-- Firebase Cloud Config Modal -->
+          <button id="firebase-btn" title="Firebase Settings" class="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-hover rounded-full transition">
+            <svg class="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 24 24"><path d="M4.17 18.06L7.33 3.84c.09-.42.6-.57.88-.26l4.29 4.7-8.33 9.78zm15.66-2.97L17.7 5.16c-.08-.4-.54-.57-.84-.31l-11.4 9.94 8.58 4.88c.36.2.8.2 1.16 0l4.63-4.58zM12.63 9.2l-2.45-4.7c-.18-.35-.68-.35-.86 0L2.73 17.47l9.9-8.27z"/></svg>
+          </button>
+
+          <!-- New Chat -->
+          <button id="new-chat-btn" title="New Chat" class="p-2 text-brand-600 dark:text-brand-400 hover:bg-gray-200 dark:hover:bg-dark-hover rounded-full transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Stories / Status Carousel -->
+      <div class="px-3 py-2 bg-white dark:bg-dark-panel border-b border-gray-100 dark:border-dark-border">
+        <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2 px-1">Status Updates</div>
+        <div id="stories-container" class="flex space-x-3 overflow-x-auto pb-1 scrollbar-none">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Search Filter -->
+      <div class="p-2.5 bg-white dark:bg-dark-panel border-b border-gray-100 dark:border-dark-border">
+        <div class="relative flex items-center bg-gray-100 dark:bg-dark-card rounded-xl px-3 py-1.5 focus-within:ring-2 focus-within:ring-brand-500">
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input id="search-input" type="text" placeholder="Search chats or messages" class="w-full bg-transparent pl-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none">
+          <button id="clear-search" class="hidden text-gray-400 hover:text-gray-600 text-xs">✕</button>
+        </div>
+      </div>
+
+      <!-- Conversations List -->
+      <div id="chat-list" class="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-dark-border/40">
+        <!-- Chat items rendered by app.js -->
+      </div>
+    </aside>
+
+    <!-- RIGHT PANE: Active Chat Window -->
+    <main id="chat-window" class="flex-1 flex flex-col bg-gray-50 dark:bg-dark-bg z-10 transition-all duration-300 absolute md:static inset-0 hidden md:flex">
+      
+      <!-- Placeholder when no chat is open (desktop) -->
+      <div id="no-chat-selected" class="hidden h-full flex flex-col items-center justify-center text-center p-6 bg-white dark:bg-dark-panel">
+        <img src="./assets/app_icon.png" class="w-24 h-24 rounded-3xl shadow-xl mb-4" alt="Mighty Chat">
+        <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">Mighty Chat Web PWA</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 max-w-sm">
+          Send and receive real-time messages, audio notes, media, and make voice & video calls. Fully installable with offline support.
+        </p>
+        <div class="mt-6 flex items-center space-x-2 text-xs text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/40 px-3 py-1.5 rounded-full border border-brand-200 dark:border-brand-800">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          <span>End-to-end encrypted simulator & Firebase ready</span>
+        </div>
+      </div>
+
+      <!-- Active Chat Content -->
+      <div id="active-chat-container" class="flex-1 flex flex-col h-full">
+        
+        <!-- Chat Top Header -->
+        <div class="h-16 px-4 bg-white dark:bg-dark-panel border-b border-gray-200 dark:border-dark-border flex items-center justify-between shadow-sm safe-top">
+          <div class="flex items-center space-x-3">
+            <!-- Back button for mobile -->
+            <button id="back-to-list-btn" class="md:hidden p-2 -ml-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-hover rounded-full">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+
+            <!-- Contact Avatar & Status -->
+            <div class="relative cursor-pointer" id="header-contact-details">
+              <img id="chat-header-avatar" src="./assets/user.png" class="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-700" alt="Avatar">
+              <span id="chat-header-status-dot" class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-dark-panel rounded-full"></span>
+            </div>
+
+            <div class="cursor-pointer" id="header-contact-name-box">
+              <h3 id="chat-header-name" class="font-semibold text-sm leading-tight text-gray-900 dark:text-gray-100">Contact</h3>
+              <p id="chat-header-subtitle" class="text-xs text-emerald-600 dark:text-emerald-400 font-medium">online</p>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex items-center space-x-1">
+            <button id="audio-call-btn" title="Voice Call" class="p-2.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-hover rounded-full transition">
+              <svg class="w-5 h-5 text-brand-600 dark:text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+            </button>
+            <button id="video-call-btn" title="Video Call" class="p-2.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-hover rounded-full transition">
+              <svg class="w-5 h-5 text-brand-600 dark:text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            </button>
+            <button id="chat-options-btn" title="Options" class="p-2.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-hover rounded-full transition">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Messages Flow Container -->
+        <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-3 chat-bg-light dark:chat-bg-dark">
+          <!-- Messages will be rendered dynamically -->
+        </div>
+
+        <!-- Attachment Preview Bar (hidden by default) -->
+        <div id="attachment-preview-bar" class="hidden bg-white dark:bg-dark-card border-t border-gray-200 dark:border-dark-border px-4 py-2 flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <img id="image-preview" class="w-12 h-12 rounded object-cover border" alt="Preview">
+            <span id="attachment-name" class="text-xs text-gray-600 dark:text-gray-300 truncate max-w-[200px]">file.png</span>
+          </div>
+          <button id="cancel-attachment-btn" class="text-red-500 hover:text-red-700 text-sm font-bold p-1">✕</button>
+        </div>
+
+        <!-- Recording Indicator Bar (hidden by default) -->
+        <div id="recording-bar" class="hidden bg-red-50 dark:bg-red-950/40 border-t border-red-200 dark:border-red-800 px-4 py-3 flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <span class="w-3 h-3 bg-red-500 rounded-full animate-ping"></span>
+            <span class="text-sm font-semibold text-red-600 dark:text-red-400">Recording Voice Note...</span>
+            <span id="recording-timer" class="text-xs font-mono font-bold text-red-700 dark:text-red-300">0:00</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button id="cancel-recording-btn" class="text-xs font-semibold text-gray-500 hover:text-gray-700 dark:text-gray-400 px-3 py-1">Cancel</button>
+            <button id="stop-and-send-recording-btn" class="bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-full hover:bg-red-700 shadow">Send Note</button>
+          </div>
+        </div>
+
+        <!-- Bottom Input Bar -->
+        <div class="p-3 bg-white dark:bg-dark-panel border-t border-gray-200 dark:border-dark-border flex items-center space-x-2 safe-bottom">
+          <!-- Emoji Picker Toggle -->
+          <button id="emoji-picker-btn" class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-dark-hover transition" title="Emojis">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </button>
+
+          <!-- File / Media Attachment -->
+          <input type="file" id="file-input" class="hidden" accept="image/*,video/*,audio/*,.pdf,.doc,.docx">
+          <button id="attach-file-btn" class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-dark-hover transition" title="Attach file or photo">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+          </button>
+
+          <!-- Text Input -->
+          <div class="flex-1">
+            <textarea id="message-input" rows="1" placeholder="Type a message..." class="w-full max-h-32 py-2 px-3 bg-gray-100 dark:bg-dark-card border-none rounded-2xl text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"></textarea>
+          </div>
+
+          <!-- Mic or Send Button -->
+          <button id="voice-record-btn" class="p-2.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-hover rounded-full transition" title="Voice Message">
+            <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+          </button>
+          <button id="send-btn" class="hidden p-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-full transition shadow-md" title="Send">
+            <svg class="w-5 h-5 translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+          </button>
+        </div>
+
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- MODAL 1: Story / Status Viewer -->
+  <div id="story-modal" class="hidden fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-4">
+    <div class="relative w-full max-w-sm h-[640px] max-h-[90vh] bg-gray-900 rounded-2xl overflow-hidden flex flex-col shadow-2xl">
+      <!-- Progress bars -->
+      <div class="p-3 absolute top-0 inset-x-0 z-10 flex space-x-1.5" id="story-progress-container"></div>
+      
+      <!-- Top header -->
+      <div class="p-4 pt-6 absolute top-0 inset-x-0 z-10 flex items-center justify-between text-white bg-gradient-to-b from-black/80 to-transparent">
+        <div class="flex items-center space-x-2">
+          <img id="story-user-avatar" class="w-8 h-8 rounded-full border border-white" src="" alt="Avatar">
+          <span id="story-user-name" class="font-semibold text-sm">User</span>
+        </div>
+        <button id="close-story-btn" class="p-1 rounded-full text-white/80 hover:text-white">✕</button>
+      </div>
+
+      <!-- Story Media -->
+      <div class="flex-1 flex items-center justify-center relative overflow-hidden bg-black" id="story-content-box">
+        <img id="story-img" class="w-full h-full object-cover" src="" alt="Story">
+        <div id="story-caption" class="absolute bottom-4 inset-x-4 bg-black/60 backdrop-blur-sm p-3 rounded-xl text-white text-xs text-center"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Audio & Video Call Overlay -->
+  <div id="call-modal" class="hidden fixed inset-0 z-50 bg-gray-950 flex flex-col justify-between p-6">
+    <!-- Call Header -->
+    <div class="flex items-center justify-between text-white safe-top">
+      <div class="flex items-center space-x-2">
+        <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></span>
+        <span id="call-status-label" class="text-xs uppercase tracking-wider font-semibold text-emerald-400">Calling...</span>
+      </div>
+      <div id="call-timer" class="font-mono text-sm font-semibold">00:00</div>
+    </div>
+
+    <!-- Main Video or Avatar Area -->
+    <div class="flex-1 flex flex-col items-center justify-center relative my-4">
+      <!-- Remote Video (Simulated / WebRTC) -->
+      <div id="call-remote-container" class="w-full max-w-lg aspect-video bg-gray-900 rounded-3xl overflow-hidden relative shadow-2xl flex flex-col items-center justify-center border border-gray-800">
+        <img id="call-contact-avatar" src="./assets/user.png" class="w-28 h-28 rounded-full shadow-lg object-cover border-4 border-brand-500" alt="Avatar">
+        <h2 id="call-contact-name" class="text-xl font-bold text-white mt-4">Sarah Connor</h2>
+        <p class="text-xs text-gray-400 mt-1">Mighty Chat Calling</p>
+        <!-- Sound Wave Animation -->
+        <div class="flex items-center space-x-1 mt-6 h-8" id="sound-waves">
+          <span class="w-1 bg-brand-500 rounded-full animate-bounce h-4"></span>
+          <span class="w-1 bg-brand-500 rounded-full animate-bounce h-8"></span>
+          <span class="w-1 bg-brand-500 rounded-full animate-bounce h-6"></span>
+          <span class="w-1 bg-brand-500 rounded-full animate-bounce h-7"></span>
+          <span class="w-1 bg-brand-500 rounded-full animate-bounce h-4"></span>
+        </div>
+      </div>
+
+      <!-- Local Self Video Feed (Webcam picture-in-picture) -->
+      <video id="local-video-preview" autoplay playsinline muted class="hidden absolute bottom-4 right-4 w-32 h-44 object-cover rounded-2xl border-2 border-white shadow-xl bg-black"></video>
+    </div>
+
+    <!-- Call Controls Bar -->
+    <div class="flex items-center justify-center space-x-6 safe-bottom">
+      <button id="call-toggle-mic" class="p-4 rounded-full bg-gray-800 text-white hover:bg-gray-700 transition" title="Toggle Mic">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+      </button>
+      <button id="call-end-btn" class="p-4 rounded-full bg-red-600 text-white hover:bg-red-700 shadow-lg transform hover:scale-105 transition" title="End Call">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M5 3a2 2 0 00-2 2v1c0 8.284 6.716 15 15 15h1a2 2 0 002-2v-3.28a1 1 0 00-.684-.948l-4.493-1.498a1 1 0 00-1.21.502l-1.13 2.257a11.042 11.042 0 01-5.516-5.517l2.257-1.128a1 1 0 00.502-1.21L9.228 3.684A1 1 0 008.279 3H5z"/></svg>
+      </button>
+      <button id="call-toggle-camera" class="p-4 rounded-full bg-gray-800 text-white hover:bg-gray-700 transition" title="Toggle Camera">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL 3: Firebase Config Modal -->
+  <div id="firebase-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-white dark:bg-dark-panel rounded-2xl p-6 shadow-2xl border border-gray-200 dark:border-dark-border">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center space-x-2">
+          <svg class="w-6 h-6 text-amber-500" fill="currentColor" viewBox="0 0 24 24"><path d="M4.17 18.06L7.33 3.84c.09-.42.6-.57.88-.26l4.29 4.7-8.33 9.78zm15.66-2.97L17.7 5.16c-.08-.4-.54-.57-.84-.31l-11.4 9.94 8.58 4.88c.36.2.8.2 1.16 0l4.63-4.58zM12.63 9.2l-2.45-4.7c-.18-.35-.68-.35-.86 0L2.73 17.47l9.9-8.27z"/></svg>
+          <h3 class="font-bold text-base">Firebase Cloud Sync</h3>
+        </div>
+        <button id="close-firebase-btn" class="text-gray-400 hover:text-gray-600">✕</button>
+      </div>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
+        Optionally paste your Firebase Web config JSON to synchronize chats with your Firestore backend. Leave blank to run in offline/local simulator mode.
+      </p>
+      <textarea id="firebase-config-json" rows="6" placeholder='{
+  "apiKey": "AIzaSy...",
+  "authDomain": "mighty-chat-app.firebaseapp.com",
+  "projectId": "mighty-chat-app",
+  "storageBucket": "mighty-chat-app.appspot.com"
+}' class="w-full bg-gray-50 dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded-xl p-3 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"></textarea>
+      
+      <div class="mt-4 flex items-center justify-end space-x-2">
+        <button id="clear-firebase-btn" class="px-3 py-1.5 text-xs text-red-500 hover:text-red-700">Clear</button>
+        <button id="save-firebase-btn" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold shadow">Save & Connect</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio Ringtone -->
+  <audio id="ringtone-audio" src="./assets/callingtone.mp3" preload="auto" loop></audio>
+
+  <!-- PWA Scripts -->
+  <script src="./app.js"></script>
+</body>
+</html>
