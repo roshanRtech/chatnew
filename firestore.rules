@@ -1,0 +1,89 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions for security and authentication
+    function isAuthenticated() {
+      return request.auth != null && request.auth.uid != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Multi-tenant check: verified from token claims (never from untrusted client body)
+    function matchesTenant(resourceData) {
+      return !('tenantId' in resourceData) || 
+             (request.auth.token != null && 
+              'tenantId' in request.auth.token && 
+              resourceData.tenantId == request.auth.token.tenantId);
+    }
+
+    // Rate / size limiter helper
+    function isValidMessage(data) {
+      return data.size() < 50 &&
+             data.keys().hasAll(['senderId', 'createdAt']) &&
+             data.senderId == request.auth.uid;
+    }
+
+    // User collection: users can read other profiles in their tenant, but ONLY update their own
+    match /users/{userId} {
+      allow read: if isAuthenticated() && matchesTenant(resource.data);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) && 
+                       // Prevent privilege escalation or changing immutable identity fields
+                       (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['uid', 'email', 'tenantId', 'role']));
+      allow delete: if false; // Disallow user deletion directly from client
+    }
+
+    // 1-on-1 and Group Chats
+    match /messages/{chatDocId} {
+      // Must be a participant in the conversation to view or query
+      allow read: if isAuthenticated() && 
+                     matchesTenant(resource.data) &&
+                     (resource.data.senderId == request.auth.uid || 
+                      resource.data.receiverId == request.auth.uid ||
+                      (resource.data.users != null && request.auth.uid in resource.data.users));
+
+      // Must be authenticated, matches tenant, and sender must be current authenticated user (prevents spoofing / IDOR)
+      allow create: if isAuthenticated() && 
+                       matchesTenant(request.resource.data) &&
+                       isValidMessage(request.resource.data);
+
+      allow update: if isAuthenticated() && 
+                       matchesTenant(resource.data) &&
+                       (resource.data.senderId == request.auth.uid || resource.data.receiverId == request.auth.uid);
+
+      allow delete: if isAuthenticated() && resource.data.senderId == request.auth.uid;
+    }
+
+    // Stories collection: read if authenticated within tenant, write only own stories
+    match /stories/{storyId} {
+      allow read: if isAuthenticated() && matchesTenant(resource.data);
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // Chat Requests: users can only see requests sent to them or by them
+    match /chat_requests/{requestId} {
+      allow read: if isAuthenticated() && 
+                     (resource.data.senderId == request.auth.uid || resource.data.receiverId == request.auth.uid);
+      allow create: if isAuthenticated() && request.resource.data.senderId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                       (resource.data.senderId == request.auth.uid || resource.data.receiverId == request.auth.uid);
+      allow delete: if isAuthenticated() && resource.data.senderId == request.auth.uid;
+    }
+
+    // Application Settings (Read only for authenticated clients; Admin only for writes)
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && 
+                      request.auth.token.admin == true; // Prevents client tampering with app settings
+    }
+
+    // Default deny for all other paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -9,25 +9,28 @@ const AppName = 'Mighty Chat';
 //endregion
 
 //region agora call key
-const agoraVideoCallId = "2d01195ef1eb4737836d0cf192ede63a";
+// Pass via --dart-define=AGORA_APP_ID=your_key at build time or fetch from secure backend
+const agoraVideoCallId = String.fromEnvironment('AGORA_APP_ID', defaultValue: "");
 //endregion
 
 //region firebase app id
-const mFirebaseAppId = 'mighty-chat-app.appspot.com';
+const mFirebaseAppId = String.fromEnvironment('FIREBASE_STORAGE_BUCKET', defaultValue: 'mighty-chat-app.appspot.com');
 const mAppIconUrl =
-    'https://firebasestorage.googleapis.com/v0/b/$mFirebaseAppId/o/app_icon.png?alt=media&token=738b073d-c575-4a79-a257-de052dadd2e3';
+    'https://firebasestorage.googleapis.com/v0/b/$mFirebaseAppId/o/app_icon.png?alt=media';
 //endregion
 
 //region Notification
-const mOneSignalAppId = '249444f0-94a6-4cdc-a143-33faa2a4e3f3';
-const mOneSignalRestKey = 'NDkyYjgwNDgtMjMyMC00YWRjLWExNzUtYmM0NDY3MzhkZDEw';
-const mOneSignalChannelId = '582d0ac5-749f-4a21-9d9e-1c7b02b1321b';
+// Do NOT hardcode master REST keys into mobile/web client code! REST notifications must be dispatched by a secure backend function.
+const mOneSignalAppId = String.fromEnvironment('ONESIGNAL_APP_ID', defaultValue: "");
+const mOneSignalRestKey = String.fromEnvironment('ONESIGNAL_REST_KEY', defaultValue: "");
+const mOneSignalChannelId = String.fromEnvironment('ONESIGNAL_CHANNEL_ID', defaultValue: "");
 //endregion
 
 //region AdMobIntegration
-const mAdMobAppId = 'ca-app-pub-1399327544318575~4295532067';
-const mAdMobBannerId = 'ca-app-pub-3940256099942544/6300978111';
-const mAdMobInterstitialId = 'ca-app-pub-3940256099942544/1033173712';
+// Use standard Google test ad IDs as defaults; production ad unit IDs should be provided via environment configs
+const mAdMobAppId = String.fromEnvironment('ADMOB_APP_ID', defaultValue: "ca-app-pub-3940256099942544~3347511713");
+const mAdMobBannerId = String.fromEnvironment('ADMOB_BANNER_ID', defaultValue: "ca-app-pub-3940256099942544/6300978111");
+const mAdMobInterstitialId = String.fromEnvironment('ADMOB_INTERSTITIAL_ID', defaultValue: "ca-app-pub-3940256099942544/1033173712");
 //endregion
 
 //region copyright
